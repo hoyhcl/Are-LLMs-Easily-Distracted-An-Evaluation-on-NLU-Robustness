@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Are LLMs Easily Distracted? An Evaluation on NLU Robustness</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #d2e4f5 100%);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 1rem;
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #3498db;
+        }
+
+        h2 {
+            font-size: 2rem;
+            color: #2c3e50;
+            margin: 2rem 0 1rem;
+            text-align: center;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #eaeaea;
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            color: #34495e;
+            margin: 1.5rem 0 1rem;
+            text-align: center;
+        }
+
+        p {
+            margin-bottom: 1.2rem;
+            font-size: 1.1rem;
+        }
+
+        a {
+            color: #3498db;
+            text-decoration: none;
+            transition: color 0.3s;
+            font-weight: 500;
+        }
+
+        a:hover {
+            color: #2980b9;
+            text-decoration: underline;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        }
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin: 30px 0;
+        }
+
+        .image-grid img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+        }
+
+        .image-grid img:hover {
+            transform: scale(1.02);
+        }
+
+        ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+
+        ol li {
+            margin-bottom: 0.8rem;
+            padding-left: 0.5rem;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+        }
+
+        ul {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+
+        ul li {
+            margin-bottom: 0.8rem;
+            padding-left: 0.5rem;
+            list-style-type: none;
+            position: relative;
+        }
+
+        ul li:before {
+            content: "•";
+            color: #3498db;
+            font-weight: bold;
+            display: inline-block;
+            width: 1em;
+            margin-left: -1em;
+        }
+
+        nav {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        nav ul {
+            display: flex;
+            justify-content: center;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            flex-wrap: wrap;
+        }
+
+        nav li {
+            margin: 0 15px;
+        }
+
+        nav a {
+            color: #2c3e50;
+            font-weight: 600;
+            padding: 8px 15px;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+
+        nav a:hover {
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+        }
+
+        .highlight {
+            background-color: #e8f4fc;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 5px solid #3498db;
+            margin: 20px 0;
+        }
+
+        .line {
+            background-color: white;
+            padding: 7px;
+            border-top: 5px solid #c5d8e5;
+            margin: 20px 0;
+        }
+
+        code {
+            background-color: #f1f3f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #d63384;
+        }
+
+        footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 2px solid #eaeaea;
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            h2 {
+                font-size: 1.7rem;
+            }
+            
+            .image-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            nav ul {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            nav li {
+                margin: 5px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="container">
+        <h1>Are LLMs Easily Distracted? An Evaluation on NLU Robustness</h1>
+        <p class="subtitle" style="text-align: center; color: #677677; font-style: italic; margin-bottom: 20px;">
+            Investigating the vulnerability of Large Language Models to misleading and bewildering inputs
+        </p>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="#introduction">Introduction</a></li>
+            <li><a href="#methodology">Methodology</a></li>
+            <li><a href="#results">Results</a></li>
+            <li><a href="#analysis">Analysis</a></li>
+            <li><a href="#references">References</a></li>
+            <li><a href="#appendix">Appendix</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <section id="introduction" class="card">
+            <h2>Lucie - Are LLMs reasonable?</h2>
+            <div class="image-grid">
+                <img src="Lucie.png" alt="Lucie AI Chatbot News" width="600" height="300">
+                <img src="Errors.png" alt="Lucie AI Errors" width="600" height="300">
+            </div>
+            
+            <p>
+                <a href="https://edition.cnn.com/2025/01/27/tech/lucie-ai-chatbot-france-scli-intl" target="_blank">
+                    CNN: French AI chatbot taken offline after wild answers led to online ridicule
+                </a>
+            </p>
+            
+            <p>LLMs are mysterious. They generate paragraphs in milliseconds, surfing every clue for your query beneath the ocean of the internet.</p>
+            
+            <div class="highlight">
+                <p>Prospectively, LLMs are the sharpest blade for us earthlings to conquer the known and unknown.</p>
+                <p>But what has Lucie said? The Lucie claimed as Lucy (2014) who activated 100% of her brain...</p>
+                <ol>
+                    <li>(3+2)*5 = 17</li>
+                    <li>"Cow's eggs"</li>
+                </ol>
+                <p>We have not activated our brain too much as Lucy, but we are able to realize how ridiculous these "answers" are!</p>
+            </div>
+            
+            <p>It should be clear and crucial for us to remember that...</p>
+            <ul>
+                <li>LLMs learn from probabilities. It is only a parrot: If this statement collocated with tokens like "Yes" heavily, the model outputs "Yes, the statement..." because of the dominating frequency even though the distribution is not actually true.</li>
+                <li>Hallucination: generated content that is either non sensical or unfaithful to the provided source content. (Huang et al, 2024)</li>
+            </ul>
+            
+            <div class="line">
+                <h3>The trajectory of LLMs</h3>
+            </div>
+            <p>The trajectory of the development of LLMs appears to be moving from scale up to optimize. </p>
+            <p>The emphasis lies in improving the capabilities of the model for efficient and sound reasoning, cost-effectiveness, and robustness. Some of the most important up-and-coming areas for the development of LLMs would be multimodal integration, such as text, images, and audio. More robust mechanisms against biases and hallucinations, as well as improvement in the capabilities for the longer contexts, would be some important areas. </p>
+            <p>The future can be probably to see smaller and more efficient models with better reasoning abilities tailored for individual tasks. Ultimately, the goal is developing robust, trustworthy, and practically useful AI assistants.</p>
+
+            <div class="line">
+                <h3>LLM's effect on human users</h3>
+            </div>
+            <p>The widespread use of large language models (LLMs) is slowly changing human cognition, behaviour, and social dynamics in ways that are only beginning to emerge.</p>
+            <p>Cognitively, excessive LLM use hastens atrophy in writing, reasoning, and memory. Users offload composition and fact-checking, resulting in proficient prompters who struggle with independent writing or error identification; recent studies have shown a decline in writing quality in students who have no assistance from LLMs.</p>
+            <p>Psychologically, LLMs promote a “competence illusion”, disguising shortcomings such as GPS, which diminish spatial skills. Instant gratification promotes overconfidence, reduces deep focus, and promotes cognitively learnt helplessness; users believe that the model has a dominant manner even when it is inaccurate.</p>
+            <p>Socially, personalised outputs informally reinforce biases, creating less obvious resonance spaces than traditional media. Distinctive machine-generated text fosters distrust in all forms of communication and devalues authentic human expression.</p>
+            <div class="image-grid">
+                <img src="NaBr.png" alt="Sodium Bromide">
+            </div>
+            <p><em>Disasterous consequence caused by misunderstanding LLM's output messages.</em></p>
+        </section>
+
+        <section id="methodology" class="card">
+            <h2>Methodology</h2>
+            <p>Regarding these issues, it can be valuable to assess the robustness of LLMs' NLU abilities.</p>
+            <p>In this study, a set of 20 misleading/tricky questions is designed to test LLMs. Ten models which sized differently are selected from 3 companies' products:</p>
+            <ul>
+                <li><strong>Gemma</strong> (Google)</li>
+                <li><strong>Qwen</strong> (Alibaba)</li>
+                <li><strong>Yi</strong> (01.AI)</li>
+            </ul>
+            <p>The models' ability to recognize the tricks and generate accurate results will be assessed using a systematic evaluation framework.</p>
+            <div class="line">
+                <h3>Criteria</h3>
+            </div>
+            <ol>
+                <li><strong>Expected Answers</strong>: The answers experienmenters expect the LLMs to find out and explain. They are the core ideas directly relating to the question. Hence, being able to answer this ideas reflects that the LLM can respond to experimenters accurately.</li>
+                <li><strong>Supplemental Information</strong>: Extra information provided by the LLMs themselves. LLMs may intent to use these points to support and consolidate the logic flow of their answer.</li>
+                <p>With these two Criterias, we can define four types for each response:</p>
+                <ol>
+                    <li><strong>EA Correct & SI Correct</strong>: The LLM performs perfectly. It accurately answers the question using correct facts to support its response.</li>
+                    <li><strong>EA Correct & SI >= 1 Wrong</strong>: The LLM can recoginze the core idea. However, it failed to completely choose correct facts to support its response. This means the LLM flaws in validating information.</li>
+                    <li><strong>EA Wrong & SI >= 1 Correct</strong>: The LLM cannot recognize the core idea. However, it still succeed to find some correct facts. This means that the LLM remains the ablility to provide although they failed in reasoning.</li>
+                    <li><strong>EA Wrong & SI Wrong</strong>: The LLM completely fails to answer the question since it cannot provide either correct answer and information. (Including the situation that the LLM rejects to answer inappropriate questions.)</li>
+                </ol>
+            </ol>
+            <p>The types' numeral order are only for reference. We are not able to make claims like "2 is more reliable than 3" based on the numeral rank.</p>
+            <p><strong>Type 2</strong> can be significantly dangerous since the correctness and incorrectness are unclearly mixed. Human users may beleive the complete result, including the incorrect parts, since the core idea is accurate. This can be harmful to users' understandings.</p>
+            <p><strong>Type 3</strong> may also harm users' understandings as well because of the "partly correct" chracteristic just mentioned.</p>
+            <p>Yet, <strong>Type 1</strong> can be considered as a standard because it represents absolute correctness.</p>
+        </section>
+
+        <section id="results" class="card">
+            <h2>Results</h2>
+            <div class = "image-grid">
+                <img src = "Graph.jpg" alt = "Type Grouping Results">
+            </div>
+        
+            <div class = "image-grid">
+                <img src = "Excel.png" alt = "Complete Data">
+            </div>
+            <p>In the graph presented, the grouping of answers by LLMs are visualised. In general, larger blue area of Type 1, which means more completely correct answers, suggests that this LLM is doing better. For gemma, Type 1 increases and Type 4 decreases as model size increases. The performance steadily progressed through generations.For qwen, the same trend is presented. However, qwen_14b_awq made more mistakes than qwen_7b. And for yi, yi_9b_awq performed less precise than yi_6b. It is possible that the application of awq lowered the ability of LLMs as qwen_14b_awq and yi_9b_awq failed to exceed their previous version, but there is no enough data to support the assumption. </p>
+        </section>
+
+        <section id="analysis" class="card">
+            <h2>Analysis on Individual Questions</h2>
+            <p>A lot of "humorous" responses we collected are actually critical to some weakness of LLMs. In this section, we will <strong>seek deep</strong> into five selected responses.</p>
+            
+            <article>
+                <div class="line">
+                    <h3>Q1: Shen Congwen the Programmer</h3>
+                </div>
+
+                <p><strong>Question</strong>: In China, cross-subject education has been encouraged for many years. Shen Congwen, a renowned Chinese novelist, wrote a book called Biancheng. Biancheng sounds the same as "coding"(編程) in Chinese. Even a novelist in literature writes books about programming!</p>
+                <p><strong>Expected Answer</strong>: Shen Congwen did not write 編程.</p>
+
+
+                <p>In this question, we intentionally misinterpret the homophony between Shen Congwen's <em>邊城 (Border Town)</em> and <em>編程 (Programming)</em>. We told the model that "biancheng means coding" without specifying which "biancheng" as a clue justifying the effort on cross-subject education. China indeed puts great effort on cross-subject education.</p>
+                
+                <p>Hence, the following elements are all valid:</p>
+                <ol>
+                    <li>Effort on cross-subject education</li>
+                    <li>The pronunciation "biancheng" means coding</li>
+                </ol>
+                
+                <p>The Gricean Maxim of Quality is achieved since there are no lies in the question.</p>
+                
+                <h4>Model Responses Analysis:</h4>
+                <p>In the ten models we evaluated, only Qwen14B_AWQ (the largest one sized among them) clearly recognizes the two "bianchengs" are not the same. Other models used invalid reasons to support our "claim":</p>
+                <ul>
+                    <li><strong>Yi9B_AWQ</strong>: "Biancheng" is considered one of the pioneering works in Chinese science fiction. It explores themes such as artificial intelligence, cybernetics, and the future of humanity, which were far ahead of its time.</li>
+                    <li><strong>Qwen7B</strong>: The title "Biancheng" is actually a homophone for "coding," but it's not a book by Shen Congwen.</li>
+                </ul>
+                <p>Biancheng is a book by Shen Congwen, but it is Border Town instead of Programming. Hence, Qwen7B's answer is still inaccurate.</p>
+                <p><strong>Key Insight:</strong> This reflects an issue: LLMs may have difficulty distinguishing homophones. LLM's word vector technique checks the closely distributed collocation. If homophones have more than one distinct distribution in the training data, LLMs can be confused when extracting meaning.</p>
+            </article>
+
+            <article>
+                <div class="line">
+                    <h3>Q11: Tax evasion and exam cheating</h3>
+                </div>
+
+                <p><strong>Question</strong>: Is Lying to avoid paying taxes no different from cheating in exams?</p>
+                <p><strong>Expected Answer</strong>: Lying to avoid tax and cheating in exam are different.</p>
+
+                <p>Congratulations! All LLMs successfully answered this question without providing any wrong information! Great job, guys!</p>
+                <h4>Model Responses Analysis:</h4>
+                <p></p>
+                <ul>
+                    <li><strong>Gemma_270m</strong>: No, lying to avoid paying taxes is different from cheating in exams.</li>
+                </ul>
+                <p>This answer did not provide any information other than denying the assumption, but we still need to group it into Class 1.</p>
+                <p><strong>Key Insight:</strong> LLMs are doing great on this topic. </p>
+
+            </article>
+
+            <article>
+                <div class="line">
+                    <h3>Q13: Gotham the livable city</h3>
+                </div>
+
+                <p><strong>Question</strong>: Gotham has a lower crime rate than Chicago, so is it a better place to live in if Gotham really exists?</p>
+                <p><strong>Expected Answer</strong>: Gotham is a terrible place to live in.</p>
+
+                <p>The question comparing Gotham from DC comic and Chicago in real life aims to test if LLMs can judge the two cities considering not only crime rate but also the whole environment due to the setting. </p>
+                <p>This question is different from the Astartes one, as Gotham is much more well-known than WH40k, the key point is on thinking above the information provided by the user.</p>
+
+                <h4>Model Responses Analysis:</h4>
+                <p></p>
+                <ul>
+                    <li><strong>Gemma_1b</strong>: Safer Streets: People generally feel safer walking around, especially at night. Reduced Fear: A lower risk of violent crime is a huge draw for many. Peace and Quiet: There's a noticeable lack of the constant hustle and bustle and occasional violence that define Chicago.</li>
+                </ul>
+                <p>Obviously, Gotham is not a place as livable as it describes.</p>
+                <p><strong>Key Insight:</strong> Some LLMs are kind of confused by the given low crime rate without considering the true situation of Gotham, they failed to collect enough information to analyse. </p>
+            </article>
+
+
+            <article>
+                <div class="line">
+                    <h3>Q16: (Syntactic) Attachment Ambiguity</h3>
+                </div>
+
+                <p><strong>Question</strong>: She hits the man in the pajamas with a hammer. Interpret the sentence.</p>
+                <p><strong>Expected Answer</strong>:  A female who wears pyjamas uses a hammer to hit a man. Or a female who uses a hammer to hit a man who is wearing pyjamas.</p>
+
+                <p>The prepositional phrases "in the pajamas" and "with a hammer" can attach to different nouns in the syntactic tree, creating two valid parses: </p>
+                <ol>
+                    <li>She [hits the man] [in the pajamas] (She is in pajamas). </li>
+                    <li>She [hits [the man in the pajamas]] (The man is in pajamas). </li>
+                </ol>
+                <p>The phrase "with a hammer" has a similar dual attachment possibility. The answer correctly identifies both.</p>
+                <ul>
+                    <li>None of the responses is able to respond to the two interpretations in this statement. </li>
+                    <li>Gemma_270m and qwen_7b_awq completely failed to respond. Gemma_270m just repeated the statement and qwen_14b_awq did not have any responses.</li>
+                    <li>Gemma_4b, Qwen_7b, Qwen_14b_awq,Yi_6b and Yi_9b_awq are able to interpret the second parse which is She [hits [the man in the pajamas]] (The man is in pajamas). </li>
+                    <li>Other responses misunderstood the statement and gave a totally wrong idea such as they analysed the statement as a cry for help, a metaphor (in pajamas) and scenario of content. </li>
+                </ul>
+            </article>
+
+            <article>
+                <div class="line">
+                    <h3>Q18: Syntatic ambiguity "...said on Monday he will..."</h3>
+                </div>
+
+                <p><strong>Question</strong>: The professor said on Monday he would give an exam. Interpret the sentence.</p>
+                <p><strong>Expected Answer</strong>: The professor made a statement on Monday about that he is giving an exam, or the professor said that he will be giving an exam, and the exam would be on Monday. </p>
+
+                <p>This sentence is syntactically ambiguous; one sentence but can have 2 interpretations. </p>
+                <p>None of the responses is able to spot the 2 interpretations.</p>
+                <p>Most responses are only able to interpret the sentence in the meaning of “The professor made a statement on Monday, about that he is giving an exam”. </p>
+                <p>Gemma_270m and qwen_7b_awq completely fail to answer the question; one just mentioned it’s a simple sentence, and one’s response is completely irrelevant. </p>
+            </article>
+
+        <section id="references" class="card">
+            <h2>References</h2>
+            <p>Huang, Lei & Yu, Weijiang & Ma, Weitao & Zhong, Weihong & Feng, Zhangyin & Wang, Haotian & Chen, Qianglong & Peng, Weihua & Feng, Xiaocheng & Liu, Ting. (2024). A Survey on Hallucination in Large Language Models: Principles, Taxonomy, Challenges, and Open Questions. <em>ACM Transactions on Information Systems</em>. 43. 10.1145/3703155.</p>
+        </section>
+
+        <section id="appendix" class="card">
+            <h2>Appendix</h2>
+            <p>All Questions, Responses and Expected Answers:</p>
+            <p><a href="https://github.com/hoyhcl/-Are-LLMs-Easily-Distracted-An-Evaluation-on-NLU-Robustness-Project-Data" target="_blank"> -Are-LLMs-Easily-Distracted-An-Evaluation-on-NLU-Robustness-Project-Data</a></p>
+        </section>
+    </main>
+
+    <footer>
+        <p>Linguistics</p>
+    </footer>
+</body>
+</html>
